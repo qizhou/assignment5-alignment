@@ -20,6 +20,7 @@ def evaluate_vllm(
     correct = 0
     format_correct = 0 # answer is 0
     incorrect = 0
+    js = []
     for output, answer in zip(outputs, answers):
         # print(output.outputs[0].text)
         result = reward_fn(output.outputs[0].text, answer)
@@ -27,11 +28,22 @@ def evaluate_vllm(
         correct += result["reward"] # both format and answer
         format_correct += result["format_reward"] * (1 - result["answer_reward"]) # format and !answer
         incorrect += (1 - result["format_reward"]) * (1 - result["answer_reward"])
+        js.append({"result": result, "actual": output.outputs[0].text})
 
+    with open("result.jsonl", "w") as f:
+        for j in js:
+            json.dump(j, f)
+            f.write("\n")
     print(f"Total {len(answers)}, correct {correct}, format_correct {format_correct}, incorrect {incorrect}")
 
 
-datafile = "./data/gsm8k/test.jsonl"
+# datafile = "./data/gsm8k/test.jsonl"
+# answer_key = "answer"
+# question_key = "question"
+datafile = "./data/math/val.jsonl"
+answer_key = "expected_answer"
+question_key = "problem"
+
 promptfile = "./cs336_alignment/prompts/r1_zero.prompt"
 sampling_params = SamplingParams(
     temperature=1.0, top_p=1.0, max_tokens=1024, stop=["</answer>"]
@@ -50,8 +62,8 @@ with open(datafile, "r", encoding="utf-8") as f:
     for line in f:
         j = json.loads(line)
         inputs.append(j)
-        answers.append(j["answer"])
-        prompt = prompt_template.format("question", question=j["question"])
+        answers.append(j[answer_key])
+        prompt = prompt_template.format("question", question=j[question_key])
         prompts.append(prompt)
 
 
