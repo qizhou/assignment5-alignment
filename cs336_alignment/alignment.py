@@ -90,3 +90,18 @@ def masked_normalize(
     """
     s = (tensor * mask).sum(dim) / normalize_constant
     return s
+
+
+def sft_microbatch_train_step(
+    policy_log_probs: torch.Tensor,
+    response_mask: torch.Tensor,
+    gradient_accumulation_steps: int,
+    normalize_constant: float | None = 1.0,
+) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+    """Compute the policy gradient loss and backprop its gradients for a microbatch.
+    """
+    batch = policy_log_probs.shape[0]
+    # TODO: why not average over sequence?
+    loss = -masked_normalize(policy_log_probs, response_mask, normalize_constant=normalize_constant) / gradient_accumulation_steps / batch
+    loss.backward()
+    return loss, {}
