@@ -64,3 +64,29 @@ def get_response_log_probs(
     else:
         entropy = None
     return {"log_probs": logp, "token_entropy": entropy}
+
+
+def masked_normalize(
+    tensor: torch.Tensor,
+    mask: torch.Tensor,
+    dim: int | None = None,
+    normalize_constant: float = 1.0,
+) -> torch.Tensor:
+    """Sum over a dimension and normalize by a constant,
+    considering only the elements with mask value 1.
+
+    Args:
+        tensor: torch.Tensor, the tensor to sum and normalize.
+        mask: torch.Tensor, the mask. We only consider elements
+            with mask value 1.
+        dim: int | None, the dimension to sum along before
+            normalization. If None, sum over all dimensions.
+        normalize_constant: float, the constant to divide by
+            for normalization.
+
+    Returns:
+        torch.Tensor, the normalized sum, where masked elements
+            (mask=0) don't contribute to the sum.
+    """
+    s = (tensor * mask).sum(dim) / normalize_constant
+    return s
