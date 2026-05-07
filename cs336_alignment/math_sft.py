@@ -47,11 +47,18 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.bfloat16,
     attn_implementation="flash_attention_2",
 )
+tokenizer = AutoTokenizer.from_pretrained("./models/Qwen2.5-Math-1.5B")
 
+
+traintokenfile = "./sft_tokens.ckp"
+
+ret = torch.load(traintokenfile, weights_only=True)
 
 input_ids = ret["input_ids"]
 labels = ret["labels"]
 response_mask = ret["response_mask"]
+
+print(tokenizer.model_max_length)
 # gradient_accumulation_steps = 4
 # for idx, (inputs, labels) in enumerate(data_loader):
 #     # Forward pass.

@@ -54,8 +54,6 @@ def tokenize_prompt_and_output(
         input_ids.append(ids[i][:-1])
         labels.append(ids[i][1:])
 
-    x = torch.tensor(input_ids)
-
     return {"input_ids": torch.tensor(input_ids), "labels": labels, "response_mask": mask}
 
 
