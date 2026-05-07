@@ -43,11 +43,11 @@ def load_policy_into_vllm_instance(policy: PreTrainedModel, llm: LLM):
 
 
 model = AutoModelForCausalLM.from_pretrained(
-    "./models//Qwen2.5-Math-1.5B",
+    "./models/Qwen2.5-Math-1.5B",
     torch_dtype=torch.bfloat16,
     attn_implementation="flash_attention_2",
 )
-tokenizer = AutoTokenizer.from_pretrained("./models//Qwen2.5-Math-1.5B")
+tokenizer = AutoTokenizer.from_pretrained("./models/Qwen2.5-Math-1.5B")
 
 trainfile = "./data/math/sft.jsonl"
 prompts_strs = []

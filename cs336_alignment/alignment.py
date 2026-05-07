@@ -1,4 +1,63 @@
 import torch
+from torch import Tensor
+from transformers import PreTrainedTokenizerBase
+
+
+def tokenize_prompt_and_output(
+    prompt_strs: list[str],
+    output_strs: list[str],
+    tokenizer: PreTrainedTokenizerBase,
+) -> dict[str, Tensor]:
+    """Tokenize the prompt and output strings, and construct a mask that is 1
+    for the response tokens and 0 for other tokens (prompt or padding).
+
+    Args:
+        prompt_strs: list[str], the prompt strings.
+        output_strs: list[str], the output strings.
+        tokenizer: PreTrainedTokenizer, the tokenizer to use.
+
+    Returns:
+        dict[str, torch.Tensor]:
+            "input_ids": torch.Tensor of shape (batch_size, max(prompt_and_output_lens) - 1):
+                the tokenized prompt and output strings, with the final token sliced off.
+            "labels": torch.Tensor of shape (batch_size, max(prompt_and_output_lens) - 1):
+                shifted input_ids (i.e., the input_ids without the first token).
+            "response_mask": torch.Tensor of shape (batch_size, max(prompt_and_output_lens) - 1):
+                a mask on the response tokens in `labels`.
+    """
+    max_len = 0
+    mask = []
+    ids = []
+    for prompt, output in zip(prompt_strs, output_strs):
+        prompt_ids = tokenizer(prompt)["input_ids"]
+        output_ids = tokenizer(output)["input_ids"]
+
+        max_len = max(len(output_ids) + len(prompt_ids), max_len)
+        # the rest (if have) of mask will be padded as False
+        mask.append([i >= len(prompt_ids) - 1 for i in range(len(prompt_ids) + len(output_ids) - 1)])
+        prompt_ids.extend(output_ids)
+        ids.append(prompt_ids)
+
+    # pad zero and mask
+    for i in range(len(ids)):
+        # padding ids
+        while len(ids[i]) < max_len:
+            ids[i].append(tokenizer.pad_token_id)
+        # padding mask
+        while len(mask[i]) < max_len - 1:
+            mask[i].append(False)
+
+    # obtain input_ids and labels
+    input_ids = []
+    labels = []
+    for i in range(len(ids)):
+        input_ids.append(ids[i][:-1])
+        labels.append(ids[i][1:])
+
+    x = torch.tensor(input_ids)
+
+    return {"input_ids": torch.tensor(input_ids), "labels": labels, "response_mask": mask}
+
 
 def compute_entropy(logits: torch.Tensor) -> torch.Tensor:
     """Get the entropy of the logits (i.e., entropy of the final dimension)."""

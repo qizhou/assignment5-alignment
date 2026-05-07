@@ -7,7 +7,7 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizerBase
-from cs336_alignment.alignment import compute_entropy, get_response_log_probs, masked_normalize, sft_microbatch_train_step
+from cs336_alignment.alignment import compute_entropy, get_response_log_probs, masked_normalize, sft_microbatch_train_step, tokenize_prompt_and_output
 
 
 def run_tokenize_prompt_and_output(
@@ -32,38 +32,7 @@ def run_tokenize_prompt_and_output(
             "response_mask": torch.Tensor of shape (batch_size, max(prompt_and_output_lens) - 1):
                 a mask on the response tokens in `labels`.
     """
-    max_len = 0
-    mask = []
-    ids = []
-    for prompt, output in zip(prompt_strs, output_strs):
-        prompt_ids = tokenizer(prompt)["input_ids"]
-        output_ids = tokenizer(output)["input_ids"]
-
-        max_len = max(len(output_ids) + len(prompt_ids), max_len)
-        # the rest (if have) of mask will be padded as False
-        mask.append([i >= len(prompt_ids) - 1 for i in range(len(prompt_ids) + len(output_ids) - 1)])
-        prompt_ids.extend(output_ids)
-        ids.append(prompt_ids)
-
-    # pad zero and mask
-    for i in range(len(ids)):
-        # padding ids
-        while len(ids[i]) < max_len:
-            ids[i].append(tokenizer.pad_token_id)
-        # padding mask
-        while len(mask[i]) < max_len - 1:
-            mask[i].append(False)
-
-    # obtain input_ids and labels
-    input_ids = []
-    labels = []
-    for i in range(len(ids)):
-        input_ids.append(ids[i][:-1])
-        labels.append(ids[i][1:])
-
-    x = torch.tensor(input_ids)
-
-    return {"input_ids": torch.tensor(input_ids), "labels": labels, "response_mask": mask}
+    return tokenize_prompt_and_output(prompt_strs, output_strs, tokenizer)
 
 
 def run_compute_group_normalized_rewards(
