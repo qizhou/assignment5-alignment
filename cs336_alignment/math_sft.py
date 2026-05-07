@@ -47,19 +47,11 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.bfloat16,
     attn_implementation="flash_attention_2",
 )
-tokenizer = AutoTokenizer.from_pretrained("./models/Qwen2.5-Math-1.5B")
-
-trainfile = "./data/math/sft.jsonl"
-prompts_strs = []
-output_strs = []
-with open(trainfile) as f:
-    for line in f:
-        j = json.loads(line)
-        prompts_strs.append(j["problem"])
-        output_strs.append(j["reasoning_trace"])
 
 
-
+input_ids = ret["input_ids"]
+labels = ret["labels"]
+response_mask = ret["response_mask"]
 # gradient_accumulation_steps = 4
 # for idx, (inputs, labels) in enumerate(data_loader):
 #     # Forward pass.
