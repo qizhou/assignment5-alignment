@@ -1,7 +1,7 @@
 import json
 
-inputfile = "./data/math/val.json"
-outputfile = "./data/math/val.jsonl"
+inputfile = "./data/math/sft.json"
+outputfile = "./data/math/sft.jsonl"
 
 with open(inputfile) as f:
     j = json.load(f)
